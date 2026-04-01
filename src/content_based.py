@@ -91,4 +91,3 @@ class ContentBasedRecommender:
             raise ValueError("Data not loaded. Call fit() first!")
 
         return sorted(self.movies_df["titles"].tolist())
-git
