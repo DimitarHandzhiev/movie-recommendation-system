@@ -1,25 +1,26 @@
 import pandas as pd
+from src.seed_movie_helper import SeedMovieHelper
 class PersonalizedNearestUserRecommender:
     def __init__(self, ratings_path: str, movies_path: str):
         self.ratings_path = ratings_path
         self.movies_path = movies_path
         self.ratings_df = None
         self.movies_df = None
-        self.title_to_movie_id = {}
         self.movie_id_to_title = {}
         self.movie_id_to_genres = {}
+        self.seed_helper = None
 
     def load_data(self):
         self.ratings_df = pd.read_csv(self.ratings_path)
         self.movies_df = pd.read_csv(self.movies_path)
 
-        self.title_to_movie_id = pd.Series(self.movies_df["movieId"].values, index=self.movies_df["title"]).to_dict()
         self.movie_id_to_title = pd.Series(self.movies_df["title"].values, index=self.movies_df["movieId"]).to_dict()
         self.movie_id_to_genres = pd.Series(self.movies_df["genres"].values, index=self.movies_df["movieId"]).to_dict()
 
         self.lower_title_to_original = {
             title.lower(): title for title in self.movies_df["title"]
         }
+        self.seed_helper = SeedMovieHelper(self.ratings_df, self.movies_df)
 
     def fit(self):#load the data
         self.load_data()
@@ -118,40 +119,6 @@ class PersonalizedNearestUserRecommender:
 
         return recommendations.reset_index(drop=True)
 
-    def get_random_seed_movies(self, n: int = 5, min_ratings:int = 200, random_state=None, exclude_movie_ids=None):
-        # return a random sample of popular and recognizable movies for the rating step
-        if exclude_movie_ids is None:
-            exclude_movie_ids = set()
-        else:
-            exclude_movie_ids = set(exclude_movie_ids)
-
-        movie_stats = self.ratings_df.groupby("movieId").agg(rating_count=("rating", "count"), avg_rating=("rating","mean")).reset_index()
-
-        # select only popular movies
-        popular_movies = movie_stats[movie_stats["rating_count"]>=min_ratings].copy()
-        popular_movies = popular_movies.merge(self.movies_df[["movieId", "title", "genres"]], on="movieId", how="left")
-        # select only generally liked movies
-        popular_movies = popular_movies[~popular_movies["movieId"].isin(exclude_movie_ids)]
-
-        if popular_movies.empty:
-            return pd.DataFrame(columns=["movieId", "title", "genres", "rating_count", "avg_rating"])
-
-        if len(popular_movies) <= n:
-            return popular_movies[["movieId", "title", "genres", "rating_count", "avg_rating"]].reset_index(drop=True)
-
-        sampled = popular_movies.sample(n=n, random_state=random_state)
-
-        return sampled[["movieId", "title", "genres", "rating_count", "avg_rating"]].reset_index(drop=True)
-
-    def get_replacement_movie(self, exclude_movie_ids=None, min_ratings: int = 100):
-        # return a single replacement movie in case of "Have not watched this movie!"
-        replacement_df = self.get_random_seed_movies(n=1, min_ratings=min_ratings, exclude_movie_ids=exclude_movie_ids)
-
-        if replacement_df.empty:
-            return None
-
-        return replacement_df.iloc[0].to_dict()
-
     def get_movie_details_by_ids(self, movie_ids: list):
         # return movie details for a list of movie IDs
         return self.movies_df[self.movies_df["movieId"].isin(movie_ids)][["movieId", "title", "genres"]].copy()
@@ -181,63 +148,28 @@ class PersonalizedNearestUserRecommender:
             exclude_movie_ids=None,
             random_state=None
     ):
-        if exclude_movie_ids is None:
-            exclude_movie_ids = set()
-        else:
-            exclude_movie_ids = set(exclude_movie_ids)
-
-        movie_stats = (
-            self.ratings_df.groupby("movieId")["rating"]
-            .agg(["count", "mean"])
-            .reset_index()
-            .rename(columns={
-                "count": "rating_count",
-                "mean": "avg_rating"
-            })
-        )
-
-        popular_movies = movie_stats[movie_stats["rating_count"] >= min_ratings].copy()
-        popular_movies = popular_movies[popular_movies["avg_rating"] >= min_avg_rating]
-
-        popular_movies = popular_movies.merge(
-            self.movies_df[["movieId", "title", "genres"]],
-            on="movieId",
-            how="left"
-        )
-
-        popular_movies = popular_movies[
-            ~popular_movies["movieId"].isin(exclude_movie_ids)
-        ].reset_index(drop=True)
-
-        if popular_movies.empty:
-            return pd.DataFrame(
-                columns=["movieId", "title", "genres", "rating_count", "avg_rating"]
-            )
-
-        if len(popular_movies) < n:
-            return popular_movies[
-                ["movieId", "title", "genres", "rating_count", "avg_rating"]
-            ].reset_index(drop=True)
-
+        #return a random but viable seed movie set for nearest-user recommendation
         for attempt in range(max_attempts):
-            # Use different randomness across attempts unless a fixed seed is explicitly desired
             current_random_state = None if random_state is None else random_state + attempt
 
-            sampled = popular_movies.sample(n=n, random_state=current_random_state).reset_index(drop=True)
+            sampled = self.seed_helper.get_random_seed_movies(n=n, min_ratings=min_ratings, min_avg_rating=min_avg_rating, exclude_movie_ids=exclude_movie_ids, random_state=current_random_state)
+            if sampled.empty:
+                return sampled
+
             seed_movie_ids = sampled["movieId"].tolist()
+            if self.has_enough_overlap_users(seed_movie_ids=seed_movie_ids, min_overlap_movies=min_overlap_movies, min_candidate_users=min_candidate_users):
+                return sampled
 
-            if self.has_enough_overlap_users(
-                    seed_movie_ids=seed_movie_ids,
-                    min_overlap_movies=min_overlap_movies,
-                    min_candidate_users=min_candidate_users
-            ):
-                return sampled[
-                    ["movieId", "title", "genres", "rating_count", "avg_rating"]
-                ].reset_index(drop=True)
+        #nNo valid seed set found
+        return pd.DataFrame(
+            columns=["movieId", "title", "genres", "rating_count", "avg_rating"])
 
-        # Fallback: if no valid set is found, return one random sample anyway
-        fallback = popular_movies.sample(n=n, random_state=random_state).reset_index(drop=True)
-
-        return fallback[
-            ["movieId", "title", "genres", "rating_count", "avg_rating"]
-        ].reset_index(drop=True)
+    def get_replacement_movie(
+            self,
+            exclude_movie_ids=None,
+            min_ratings: int = 100,
+            min_avg_rating: float = 3.5,
+            random_state=None
+    ):
+        #return a single replacement movie for the UI.
+        return self.seed_helper.get_replacement_movie(exclude_movie_ids=exclude_movie_ids, min_ratings=min_ratings, min_avg_rating=min_avg_rating, random_state=random_state)
