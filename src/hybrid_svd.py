@@ -81,3 +81,99 @@ class AdvancedHybridRecommender:
             user_vector = user_vector / norm
 
         return user_vector
+
+    def compute_svdpp_scores_new_user(self, user_ratings: dict):
+        #new user predictions
+        user_vector = self.compute_new_user_vector(user_ratings)
+        if user_vector is None:
+            return pd.DataFrame(columns=["movieId", "svdpp_score"])
+
+        rows = []
+        for movie_id in self.movies_df["movieId"]:
+            if movie_id in user_ratings:
+                continue
+            try:
+                inner_iid = self.svdpp_model.trainset.to_inner_iid(movie_id)
+            except:
+                continue
+
+            qi = self.svdpp_model.qi[inner_iid]
+            bi = self.svdpp_model.bi[inner_iid]
+            mu = self.svdpp_model.trainset.global_mean
+
+            score = mu + bi + np.dot(user_vector, qi)
+
+            rows.append({"movieId": movie_id, "svdpp_score": float(score)})
+
+            return pd.DataFrame(rows)
+
+    def build_user_content_profile(self, user_ratings: dict):
+        #builds the content scores
+        if not user_ratings:
+            return None
+
+        vectors = []
+        weights = []
+
+        for movie_id, rating in user_ratings.items():
+            if movie_id not in self.movie_index_map:
+                continue
+            idx = self.movie_index_map[movie_id]
+            vec = self.movie_genre_matrix[idx]
+
+            vectors.append(vec)
+            weights.append(float(rating))
+
+        if not vectors:
+            return None
+
+        vectors = np.array(vectors)
+        weights = np.array(weights).reshape(-1,1)
+
+        profile = np.sum(vectors * weights, axis=0)
+
+        norm = np.linalg.norm(profile)
+        if norm>0:
+            profile = profile /norm
+
+        return profile
+
+    def compute_content_scores(self, user_ratings: dict):
+        profile = self.build_user_content_profile(user_ratings)
+
+        if profile is None:
+            return pd.DataFrame(columns=["movieId","content_score"])
+
+        similarities = cosine_similarity([profile], self.movie_genre_matrix)[0]
+
+        return pd.DataFrame({"movieId": self.movies_df["movieId"], "content_score": similarities})
+
+    def recommend_from_ratings(self, user_ratings: dict, top_n: int = 10, alpha: float = 0.7):
+        #final hybrid mode
+
+        svdpp_scores = self.compute_svdpp_scores_new_user(user_ratings)
+        content_scores = self.compute_content_scores(user_ratings)
+
+        merged = pd.merge(svdpp_scores, content_scores, on="movieId", how="outer").fillna(0.0)
+
+        merged = merged[~merged["movieId"].isin(user_ratings.keys())]
+
+        for col in ["svdpp_score", "content_score"]:
+            if merged[col].max() > merged[col].min():
+                merged[col]= (merged[col] - merged[col].min()) / (merged[col].max() - merged[col].min())
+            else:
+                merged[col]= 0.0
+
+        merged["final_score"] = alpha * merged["svdpp_score"] + (1 - alpha) * merged["content_score"]
+
+        merged = merged.sort_values("final_score", ascending=False).head(top_n)
+
+        merged = merged.merge(self.movies_df[["movieId", "title", "genres"]], on="movieId")
+
+        return merged[["movieId", "title", "genres", "svdpp_score", "content_score", "final_score"]].reset_index(drop=True)
+
+    def get_random_seed_movies(self, **kwargs):
+        return self.seed_helper.get_random_seed_movies(**kwargs)
+
+    def get_replacement_movie(self, **kwargs):
+        return self.seed_helper.get_replacement_movie(**kwargs)
