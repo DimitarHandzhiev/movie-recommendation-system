@@ -73,6 +73,7 @@ def evaluate():
     print("Starting evaluation...")
 
     for i, user_id in enumerate(sampled_users):
+        print(f"\n➡️ Starting user {i + 1}/{len(sampled_users)} (userId={user_id})")
         user_sample = sample_user_data(ratings_df, user_id)
         if user_sample is None:
             continue
@@ -86,16 +87,19 @@ def evaluate():
         seed_movie_title = nearest_model.movie_id_to_title[seed_movie_id]
         content_recs = content_model.recommend_by_title(seed_movie_title, top_n=10)
         content_rec_ids = content_recs["movieId"].tolist()
+        print("   Content done")
 
         #Nearest user mode
         #----------------------
         nearest_recs = nearest_model.recommend_from_ratings(seed_ratings, top_n=10)
         nearest_rec_ids = nearest_recs["movieId"].tolist()
+        print("   Nearest done")
 
         #Hybrid mode
         #--------------
         hybrid_recs = hybrid_model.recommend_from_ratings(seed_ratings, top_n=10)
         hybrid_rec_ids = hybrid_recs["movieId"].tolist()
+        print("   Hybrid done")
 
         for name, recs in zip(["content", "nearest", "hybrid"], [content_rec_ids, nearest_rec_ids, hybrid_rec_ids]):
             results[name]["hr5"].append(hit_rate(recs, hidden_movies, 5))
