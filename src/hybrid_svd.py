@@ -99,7 +99,7 @@ class AdvancedHybridRecommender:
         return similarities
 
 
-    def compute_svdpp_scores(self, user_ratings: dict, max_candidates: int = 10000):#SVD++ score
+    def compute_svdpp_scores(self, user_ratings: dict):#SVD++ score
         nearest_users = self.find_nearest_users(user_ratings)
 
         if not nearest_users:
@@ -110,13 +110,24 @@ class AdvancedHybridRecommender:
 
 
         #Candidate movies = movies rated by nearest users
-        candidate_movie_ids = self.ratings_df[self.ratings_df["userId"].isin(sim_map.keys())]["movieId"].unique().tolist()
+        candidate_df = self.ratings_df[
+            self.ratings_df["userId"].isin(sim_map.keys())
+        ]
+
+        # Count how many times each movie appears among similar users
+        movie_counts = (
+            candidate_df.groupby("movieId")
+            .size()
+            .sort_values(ascending=False)
+        )
+
+        # Take top N most frequent movies
+        candidate_movie_ids = movie_counts.head(3000).index.tolist()
 
         # Remove already rated movies
-        candidate_movie_ids = [m for m in candidate_movie_ids if m not in user_ratings]
-
-        if len(candidate_movie_ids) > max_candidates:
-            candidate_movie_ids = candidate_movie_ids[:max_candidates]
+        candidate_movie_ids = [
+            m for m in candidate_movie_ids if m not in user_ratings
+        ]
 
         # Compute scores
         rows = []
