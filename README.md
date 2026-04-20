@@ -27,6 +27,6 @@ The best performance was achieved with approximately 5000 candidate items, highl
 ### Evaluation results for 5000 candidates:
  Mode          | hitRate@5 | HitRate@10 | Precision@10
 #------------------------------------------------------
- Content-based | 0.040     | 0.060      | 0.006
- Nearest-user  | 0.320     | 0.400      | 0.044
- Hybrid        | 0.160     | 0.300      | 0.032
+- Content-based | 0.040     | 0.060      | 0.006
+- Nearest-user  | 0.320     | 0.400      | 0.044
+- Hybrid        | 0.160     | 0.300      | 0.032
