@@ -25,3 +25,8 @@ export async function replaceMovie(excludeMovieIds) {
 
     return response.json();
 }
+
+export async function getRecommendations(mode, ratings) {
+    const response = await fetch("http://127.0.0.1:8000/recommend",{method:"POST",headers:{"Content-Type":"application/json",}, body: JSON.stringify({mode:mode,ratings:ratings,top_n:10,}),});
+    return await response.json();
+}

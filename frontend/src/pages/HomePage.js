@@ -1,11 +1,13 @@
-import { useEffect, useState} from "react";
+import { useDeferredValue, useEffect, useState} from "react";
 import StarRating from "../components/StarRatings";
 import { getSeedMovies, replaceMovie } from "../services/api";
+import { getRecommendations } from "../services/api";
 
 function HomePage(){
     const [mode, setMode] = useState("content");
     const [movies, setMovies] = useState([]);
-    const [ratings, setRatings] = useState([]);
+    const [ratings, setRatings] = useState({});
+    const [recommendations, setRecommendations] = useState([]);
 
     useEffect(() => {
         loadMovies();
@@ -44,6 +46,26 @@ function HomePage(){
         }
     };
 
+    const handleRecommend = async () => {
+        const result = await getRecommendations(mode, ratings);
+
+        console.log("Recommendation result:", result);
+
+        if (Array.isArray(result)) {
+            setRecommendations(result);
+        } else if (result.error) {
+            alert(result.error);
+            setRecommendations([]);
+        } else if (result.detail) {
+            alert(JSON.stringify(result.detail, null, 2));
+            setRecommendations([]);
+        } else {
+            alert(JSON.stringify(result, null, 2));
+            setRecommendations([]);
+        }
+    };
+
+
     return(
         <div style={{padding: "2rem"}}>
             <h1>Movie Recommendation System</h1>
@@ -62,13 +84,19 @@ function HomePage(){
                 <div key={movie.movieId} style={{marginBottom: "1rem", padding: "1rem", border: "1px solid #ccc", borderRadius: "8px",}}>
                     <p><strong>{movie.title}</strong></p>
                 <StarRating rating={ratings[movie.movieId] ? parseFloat(ratings[movie.movieId]) : 0} onRatingChange={(value) => handleRatingChange(movie.movieId, value.toString())}/>
-                <button onClick={() => {handleRatingChange(movie.movieId)}} style={{marginTop:"0.5rem", padding:"0.4rem 0.8rem",borderRadius:"6px",border:"1px solid #ccc",cursor:"pointer", background:"#f8f8f8",}}>
+                <button onClick={()=> handleReplaceMovie(movie.movieId)} style={{marginTop: "0.5rem", padding:"0.4rem 0.8rem", borderRadius:"6px", border:"1px solid #ccc", cursor:"pointer", background:"#f8f8f8",}}>
                     Not Watched
                 </button>
             </div>
             ))}
             <h3>Current ratings:</h3>
             <pre>{JSON.stringify(ratings, null, 2)}</pre>
+            <button onClick={handleRecommend}>Get Recommendations</button>
+            <h2>Recommendations:</h2>
+            {Array.isArray(recommendations) &&
+                recommendations.map((m) => (
+                <p key={m.movieId}>{m.title}</p>
+                ))}
         </div>
     );
 }
