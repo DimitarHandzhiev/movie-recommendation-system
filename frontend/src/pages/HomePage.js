@@ -8,17 +8,23 @@ function HomePage(){
     const [movies, setMovies] = useState([]);
     const [ratings, setRatings] = useState({});
     const [recommendations, setRecommendations] = useState([]);
+    const [isLoadingMovies, setIsLoadingMovies] = useState(false);
+    const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
 
     useEffect(() => {
         loadMovies();
     }, []);
 
     const loadMovies = async () => {
+        setIsLoadingMovies(true);
+
         try{
             const data = await getSeedMovies();
             setMovies(data);
         } catch (err) {
             console.error(err);
+        } finally {
+            setIsLoadingMovies(false);
         }
     };
 
@@ -47,58 +53,99 @@ function HomePage(){
     };
 
     const handleRecommend = async () => {
-        const result = await getRecommendations(mode, ratings);
+        setIsLoadingRecommendations(true);
 
-        console.log("Recommendation result:", result);
+        try {
+            const result = await getRecommendations(mode, ratings);
 
-        if (Array.isArray(result)) {
-            setRecommendations(result);
-        } else if (result.error) {
-            alert(result.error);
-            setRecommendations([]);
-        } else if (result.detail) {
-            alert(JSON.stringify(result.detail, null, 2));
-            setRecommendations([]);
-        } else {
-            alert(JSON.stringify(result, null, 2));
-            setRecommendations([]);
-        }
+            if (Array.isArray(result)) {
+                setRecommendations(result);
+            } else if (result.error) {
+                alert(result.error);
+                setRecommendations([]);
+            } else if (result.detail) {
+                alert(JSON.stringify(result.detail, null, 2));
+                setRecommendations([]);
+            } else {
+                alert(JSON.stringify(result, null, 2));
+                setRecommendations([]);
+            }
+        } catch (error){
+            console.error(error);
+            alert("Failed to get recommendations");
+        } finally {
+            setIsLoadingRecommendations(false);
+        }        
     };
 
+    const LoadingSpinner = ({ text }) => (
+        <div className="loader">⏳ {text} </div>
+    );
 
-    return(
-        <div style={{padding: "2rem"}}>
-            <h1>Movie Recommendation System</h1>
 
-            <label>Select mode: </label>
-            <select value={mode} onChange={(e) => setMode(e.target.value)}>
-                <option value="content">Content-Based Recommender</option>
-                <option value="nearest">Nearest-User Recommender</option>
-                <option value="hybrid">Hybrid Recommender</option>
-            </select>
+    return (
+    <div className="app-container">
+      <div className="app-card">
+        <h1 className="app-title">Movie Recommendation System</h1>
+        <p className="app-subtitle">
+          Compare content-based, nearest-user and hybrid recommendation models.
+        </p>
 
-            <p>Current mode: {mode}</p>
+        <label>Select mode: </label>
+        <select
+          className="mode-select"
+          value={mode}
+          onChange={(e) => setMode(e.target.value)}>
+          <option value="content">Content-Based Recommender</option>
+          <option value="nearest">Nearest-User Recommender</option>
+          <option value="hybrid">Hybrid Recommender</option>
+        </select>
 
-            <h2>Rate these movies:</h2>
-            {movies.map((movie)=>(
-                <div key={movie.movieId} style={{marginBottom: "1rem", padding: "1rem", border: "1px solid #ccc", borderRadius: "8px",}}>
-                    <p><strong>{movie.title}</strong></p>
-                <StarRating rating={ratings[movie.movieId] ? parseFloat(ratings[movie.movieId]) : 0} onRatingChange={(value) => handleRatingChange(movie.movieId, value.toString())}/>
-                <button onClick={()=> handleReplaceMovie(movie.movieId)} style={{marginTop: "0.5rem", padding:"0.4rem 0.8rem", borderRadius:"6px", border:"1px solid #ccc", cursor:"pointer", background:"#f8f8f8",}}>
-                    Not Watched
-                </button>
+        <p>Current mode: {mode}</p>
+
+        <h2 className="section-title">Rate these movies:</h2>
+
+        {isLoadingMovies && <LoadingSpinner text="Loading seed movies..." />}
+
+        {!isLoadingMovies && (
+        <div className="seed-grid">{movies.map((movie) => (
+            <div key={movie.movieId} className="movie-card">
+                <div>
+                <p className="movie-title">{movie.title}</p>
+                <div className="movie-rating-area">
+                    <StarRating rating={ratings[movie.movieId] !== undefined ? parseFloat(ratings[movie.movieId]) : 0}onRatingChange={(value) => handleRatingChange(movie.movieId, value.toString())}/>
+                </div>
+                </div>
+                <div className="movie-actions">
+                <button className="secondary-button" onClick={() => handleReplaceMovie(movie.movieId)}>Not Watched</button>
+                </div>
             </div>
             ))}
-            <h3>Current ratings:</h3>
-            <pre>{JSON.stringify(ratings, null, 2)}</pre>
-            <button onClick={handleRecommend}>Get Recommendations</button>
-            <h2>Recommendations:</h2>
-            {Array.isArray(recommendations) &&
-                recommendations.map((m) => (
-                <p key={m.movieId}>{m.title}</p>
-                ))}
         </div>
-    );
+        )}
+
+        <h3 className="section-title">Current ratings:</h3>
+        <pre className="rating-box">{JSON.stringify(ratings, null, 2)}</pre>
+
+        <button className="primary-button" onClick={handleRecommend} disabled={isLoadingRecommendations}>
+          {isLoadingRecommendations ? "Generating..." : "Get Recommendations"}
+        </button>
+
+        {isLoadingRecommendations && (<LoadingSpinner text="Generating recommendations..." />)}
+
+        <h2 className="section-title">Recommendations:</h2>
+
+        {Array.isArray(recommendations) && recommendations.length > 0 && (<div className="recommendation-grid">{recommendations.map((m) => (
+                <div key={m.movieId} className="recommendation-card">
+                    <div className="recommendation-title">{m.title}</div>
+                    {m.genres && (<div className="genre-tags">{m.genres.split("|").map((g)=>(<span key={g} className="genre-tag">{g}</span>))}</div>)}
+                </div>
+                ))}
+            </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default HomePage;

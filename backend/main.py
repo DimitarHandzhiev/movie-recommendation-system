@@ -14,7 +14,7 @@ RATINGS_PATH = "data/ml-latest-small/ratings.csv"
 MOVIES_PATH = "data/ml-latest-small/movies.csv"
 
 app = FastAPI()
-print("LOADED MAIN.PY FROM BACKEND")
+print("Wait until models fit, then start frontend!")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
