@@ -91,3 +91,17 @@ The best performance was achieved with approximately 5000 candidate items, highl
 - For each user we hide at least one movie that he liked and then we generate recommendations using different modes. Finally, we check if the hidden movie is in the top-K recommended movies.
 If it is, then hit=1, otherwise hit=0
 - hitRate@K = (# users with at least 1 hit in top-K) / (total users).
+
+## Future Improvements:
+- Model optimization, so it do not take so much time for getting results
+- Save user profiles and personal movie taste
+
+## Demo screenshots:
+<img width="1412" height="738" alt="image" src="https://github.com/user-attachments/assets/562c26bf-a842-4699-bb98-c970fc2ec5d7" />
+<img width="1418" height="732" alt="image" src="https://github.com/user-attachments/assets/f9302d9b-d9fc-4c4e-a66e-671d71452d45" />
+<img width="1431" height="840" alt="image" src="https://github.com/user-attachments/assets/6f5cb92c-cb41-4069-b923-eccb281822dc" />
+
+## Author
+Dimitar Handzhiev, Computer Science @ RWTH Aachen University
+
+
