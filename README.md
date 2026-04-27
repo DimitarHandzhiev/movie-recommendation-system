@@ -106,4 +106,4 @@ The best performance was achieved with approximately 5000 candidate items, highl
 hitRate@K evaluates whether the recommender system is able to include at least one relevant item within the top-K recommended items for a given user.
 For each user we hide at least one movie that he liked and then we generate recommendations using different modes. Finally, we check if the hidden movie is in the top-K recommended movies.
 If it is, then hit=1, otherwise hit=0
-hitRate@K = (# users with at least 1 hit in top-K) / (total users)
+hitRate@K = (# users with at least 1 hit in top-K) / (total users).
