@@ -18,11 +18,27 @@ function HomePage(){
     const loadMovies = async () => {
         setIsLoadingMovies(true);
 
-        try{
+        try {
             const data = await getSeedMovies();
+
+            console.log("Seed movies response:", data);
+
+            if (Array.isArray(data)) {
             setMovies(data);
+            } else if (data.error) {
+            alert(data.error);
+            setMovies([]);
+            } else if (data.detail) {
+            alert(JSON.stringify(data.detail, null, 2));
+            setMovies([]);
+            } else {
+            alert(JSON.stringify(data, null, 2));
+            setMovies([]);
+            }
         } catch (err) {
             console.error(err);
+            alert("Failed to load seed movies");
+            setMovies([]);
         } finally {
             setIsLoadingMovies(false);
         }
@@ -88,7 +104,7 @@ function HomePage(){
       <div className="app-card">
         <h1 className="app-title">Movie Recommendation System</h1>
         <p className="app-subtitle">
-          Compare content-based, nearest-user and hybrid recommendation models.
+          Content-based mode | Nearest-user mode | Hybrid recommendation mode
         </p>
 
         <label>Select mode: </label>
@@ -109,24 +125,25 @@ function HomePage(){
 
         {!isLoadingMovies && (
         <div className="seed-grid">{movies.map((movie) => (
-            <div key={movie.movieId} className="movie-card">
-                <div>
-                <p className="movie-title">{movie.title}</p>
-                <div className="movie-rating-area">
-                    <StarRating rating={ratings[movie.movieId] !== undefined ? parseFloat(ratings[movie.movieId]) : 0}onRatingChange={(value) => handleRatingChange(movie.movieId, value.toString())}/>
-                </div>
-                </div>
-                <div className="movie-actions">
-                <button className="secondary-button" onClick={() => handleReplaceMovie(movie.movieId)}>Not Watched</button>
+            <div
+                key={movie.movieId}
+                className="movie-card poster-card"
+                style={{backgroundImage: movie.posterUrl ? `url(${movie.posterUrl})` : "none",}}>
+                <div className="poster-card-content">
+                    <div>
+                    <p className="movie-title">{movie.title}</p>
+                    <div className="movie-rating-area">
+                        <StarRating rating={ratings[movie.movieId] !== undefined ? parseFloat(ratings[movie.movieId]) : 0}onRatingChange={(value) =>handleRatingChange(movie.movieId, value.toString())}/>
+                    </div>
+                    </div>
+                    <div className="movie-actions">
+                    <button className="secondary-button" onClick={() => handleReplaceMovie(movie.movieId)}>Not Watched</button>
+                    </div>
                 </div>
             </div>
             ))}
         </div>
         )}
-
-        <h3 className="section-title">Current ratings:</h3>
-        <pre className="rating-box">{JSON.stringify(ratings, null, 2)}</pre>
-
         <button className="primary-button" onClick={handleRecommend} disabled={isLoadingRecommendations}>
           {isLoadingRecommendations ? "Generating..." : "Get Recommendations"}
         </button>
@@ -136,10 +153,20 @@ function HomePage(){
         <h2 className="section-title">Recommendations:</h2>
 
         {Array.isArray(recommendations) && recommendations.length > 0 && (<div className="recommendation-grid">{recommendations.map((m) => (
-                <div key={m.movieId} className="recommendation-card">
+            <div
+                key={m.movieId}
+                className="recommendation-card poster-card clickable-card"
+                onClick={()=>m.imdbUrl && window.open(m.imdbUrl, "_blank")}
+                style={{backgroundImage: m.posterUrl ? `url(${m.posterUrl})` : "none",}}>
+                {m.avgRating && (<div className="rating-badge">⭐ {m.avgRating}</div>)}
+                <div className="poster-card-content">
+                    
                     <div className="recommendation-title">{m.title}</div>
-                    {m.genres && (<div className="genre-tags">{m.genres.split("|").map((g)=>(<span key={g} className="genre-tag">{g}</span>))}</div>)}
+                    {m.genres && (<div className="genre-tags">{m.genres.split("|").map((g) => (<span key={g} className="genre-tag">{g}</span>))}
+                    </div>
+                    )}
                 </div>
+            </div>
                 ))}
             </div>
         )}

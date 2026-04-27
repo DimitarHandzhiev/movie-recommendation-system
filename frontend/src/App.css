@@ -173,6 +173,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  justify-content: flex-start;
 }
 
 .genre-tag {
@@ -188,4 +189,69 @@ body {
   margin: 16px 0;
   color: #2496ed;
   font-weight: 700;
+}
+
+.poster-card {
+  position: relative;
+  overflow: hidden;
+  background-size: cover; 
+  background-position: center;
+  min-height: 220px;
+}
+
+.poster-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(10,18,28,0.72);
+  backdrop-filter: blur(2px);
+  transition: 0.25s ease;
+}
+
+.poster-card:hover::before {
+  background: rgba(10,18,28,0.55);
+  backdrop-filter: blur(0px);
+}
+
+.poster-card-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: auto;
+  padding: 16px;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  align-items:flex-start;
+  text-align: left;
+}
+
+.poster-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 35px rgba(36, 150, 237, 0.18);
+}
+
+.clickable-card {
+  cursor: pointer;
+}
+
+.rating-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(10, 18, 28, 0.82);
+  border: 1px solid rgba(36, 150, 237, 0.45);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  z-index: 5;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.poster-card:hover .rating-badge {
+  border-color: #2496ed;
 }
