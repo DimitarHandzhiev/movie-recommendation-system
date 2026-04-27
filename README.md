@@ -34,11 +34,11 @@ IMDB Integration:
 
 Algorithms:
 - Content-Based:
-- - Based on genres similarity
+   - Based on genres similarity
 - Nearest User:
-- - Finds users with similar taste and recommends other movies that these users have watched
+   - Finds users with similar taste and recommends other movies that these users have watched
 - Hybrid:
-- - Combines both approached for better accuracy
+   - Combines both approached for better accuracy
 
 ## Dataset
 - MovieLens dataset ml-latest-small
@@ -51,23 +51,6 @@ Algorithms:
 - surprise
 - scikit-learn
 
-## Project structure:
-movie-recommendation-system/
-│
-├── backend/
-│   ├── main.py
-│   ├── requirements.txt
-│   ├── data/
-│   └── src/
-│
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   └── package.json
-│
-├── start_app.bat
-└── README.md
-
 ## Setup & Run:
 After starting the front and backend, you should wait until the models are fit before using the system. This could take 2-3minutes.
 Keep in mind that different recommendation modes can take a couple seconds to give you recommendation movies. Be patient :)
@@ -76,17 +59,17 @@ Keep in mind that different recommendation modes can take a couple seconds to gi
 For manual setup:
 - Backend:
 
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload
+   - cd backend
+   - python -m venv .venv
+   - .venv\Scripts\activate
+   - pip install -r requirements.txt
+   - uvicorn main:app --reload
 
 - Frontend:
 
-cd frontend
-npm install
-npm start
+   - cd frontend
+   - npm install
+   - npm start
 
 If you have TMDB API key and wants to visualize the movie posters:
 - Uncomment the "TMDB_API_KEY=your_api_key_here" in the start_app.bat and put your API key. Then save and open the .bat file again.
@@ -103,7 +86,7 @@ The best performance was achieved with approximately 5000 candidate items, highl
 - Nearest-user  | 0.320     | 0.400      | 0.044
 - Hybrid        | 0.160     | 0.300      | 0.032
 
-hitRate@K evaluates whether the recommender system is able to include at least one relevant item within the top-K recommended items for a given user.
-For each user we hide at least one movie that he liked and then we generate recommendations using different modes. Finally, we check if the hidden movie is in the top-K recommended movies.
+- hitRate@K evaluates whether the recommender system is able to include at least one relevant item within the top-K recommended items for a given user.
+- For each user we hide at least one movie that he liked and then we generate recommendations using different modes. Finally, we check if the hidden movie is in the top-K recommended movies.
 If it is, then hit=1, otherwise hit=0
-hitRate@K = (# users with at least 1 hit in top-K) / (total users).
+- hitRate@K = (# users with at least 1 hit in top-K) / (total users).
