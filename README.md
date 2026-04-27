@@ -79,12 +79,13 @@ If you have TMDB API key and wants to visualize the movie posters:
 Evaluation shows, that increasing the number of candidate items initially improves performance, but beyond a certain threshold introduces noise and degrades recommendation quality.
 The best performance was achieved with approximately 5000 candidate items, highlighting the importance of effective candidate selection in recommendation systems.
 
-### Evaluation results for 5000 candidates:
-# Mode          | hitRate@5 | HitRate@10 | Precision@10
-# ------------------------------------------------------
-- Content-based | 0.040     | 0.060      | 0.006
-- Nearest-user  | 0.320     | 0.400      | 0.044
-- Hybrid        | 0.160     | 0.300      | 0.032
+### Evaluation results for 5000 candidates
+
+| Mode           | HitRate@5 | HitRate@10 | Precision@10 |
+|----------------|----------:|-----------:|-------------:|
+| Content-based  | 0.040     | 0.060      | 0.006        |
+| Nearest-user   | 0.320     | 0.400      | 0.044        |
+| Hybrid         | 0.160     | 0.300      | 0.032        |
 
 - hitRate@K evaluates whether the recommender system is able to include at least one relevant item within the top-K recommended items for a given user.
 - For each user we hide at least one movie that he liked and then we generate recommendations using different modes. Finally, we check if the hidden movie is in the top-K recommended movies.
