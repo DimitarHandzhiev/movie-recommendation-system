@@ -69,6 +69,8 @@ movie-recommendation-system/
 └── README.md
 
 ## Setup & Run:
+After starting the front and backend, you should wait until the models are fit before using the system. This could take 2-3minutes.
+Keep in mind that different recommendation modes can take a couple seconds to give you recommendation movies. Be patient :)
 - Just run start_app.bat for automatic start(this will start the back- and frontend and open browser automatically)
 
 For manual setup:
